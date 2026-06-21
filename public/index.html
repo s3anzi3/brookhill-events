@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brook Hill Events</title>
+<meta name="description" content="The Brook Hill Alliance — summer events hub. Discos, recreation, social games and more.">
+<link rel="icon" href="uploads/bha-logo.png">
+<link rel="apple-touch-icon" href="uploads/bha-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+  html,body{background:#060611;color:#f8fafc;font-family:'Space Grotesk',sans-serif;overflow-x:hidden;}
+  a{text-decoration:none;color:inherit;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes bg-pulse{0%,100%{transform:scale(0.92);opacity:0.45}50%{transform:scale(1.14);opacity:0.85}}
+  @keyframes rise{0%{transform:translateY(26px);opacity:0}100%{transform:translateY(0);opacity:1}}
+  @keyframes glow{0%,100%{box-shadow:0 0 24px rgba(168,85,247,0.35),0 6px 20px rgba(0,0,0,0.4)}50%{box-shadow:0 0 44px rgba(168,85,247,0.6),0 8px 28px rgba(0,0,0,0.5)}}
+  @keyframes float-logo{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  /* ambient glow orbs */
+  .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(4px);}
+  .orb.a{top:-22%;left:-18%;width:64vw;height:64vw;background:radial-gradient(circle,rgba(168,85,247,0.10) 0%,transparent 65%);animation:float 16s ease-in-out infinite;}
+  .orb.b{bottom:-20%;right:-18%;width:58vw;height:58vw;background:radial-gradient(circle,rgba(34,211,238,0.07) 0%,transparent 65%);animation:float 20s ease-in-out infinite reverse;}
+  .orb.c{top:30%;right:-10%;width:40vw;height:40vw;background:radial-gradient(circle,rgba(236,72,153,0.06) 0%,transparent 65%);animation:float 24s ease-in-out infinite;}
+
+  .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:48px 22px 56px;min-height:100svh;display:flex;flex-direction:column;}
+
+  /* header */
+  header{text-align:center;margin-bottom:38px;animation:rise 0.7s cubic-bezier(0.2,0.7,0.25,1) both;}
+  .logo{width:104px;height:104px;border-radius:50%;display:block;margin:0 auto 20px;animation:float-logo 6s ease-in-out infinite;
+        filter:drop-shadow(0 0 22px rgba(201,168,76,0.65)) drop-shadow(0 0 52px rgba(201,168,76,0.32));}
+  .kicker{font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.62);margin-bottom:10px;}
+  h1{font-size:46px;font-weight:800;letter-spacing:-1px;line-height:1;
+     background:linear-gradient(135deg,#E7C75A 0%,#C9A84C 48%,#9C7A2E 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#C9A84C;
+     text-shadow:0 2px 30px rgba(201,168,76,0.28);}
+  .sub{font-size:14.5px;color:#94a3b8;margin-top:14px;line-height:1.5;}
+
+  /* cards */
+  .cards{display:flex;flex-direction:column;gap:14px;}
+  .card{position:relative;display:flex;align-items:center;gap:16px;padding:18px 18px;border-radius:20px;
+        background:rgba(255,255,255,0.045);border:1.5px solid rgba(255,255,255,0.08);
+        transition:transform .14s ease,border-color .14s ease,background .14s ease;animation:rise 0.6s cubic-bezier(0.2,0.7,0.25,1) both;}
+  .card.live{cursor:pointer;}
+  .card.live:hover{transform:translateY(-2px);background:rgba(255,255,255,0.07);}
+  .card.live:active{transform:scale(0.99);}
+  .card.soon{opacity:0.66;}
+  .ic{flex-shrink:0;width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.35);}
+  .body{flex:1;min-width:0;}
+  .body .t{font-size:18px;font-weight:700;letter-spacing:-0.3px;color:#f8fafc;}
+  .body .d{font-size:13px;color:#94a3b8;margin-top:4px;line-height:1.45;}
+  .arrow{flex-shrink:0;font-size:22px;padding-left:2px;}
+  .pill{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;
+        padding:5px 11px;border-radius:20px;background:rgba(148,163,184,0.12);border:1px solid rgba(148,163,184,0.25);color:#94a3b8;white-space:nowrap;}
+  .pill.go{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.28);color:#4ade80;}
+
+  footer{margin-top:auto;padding-top:40px;text-align:center;color:#4b5563;font-size:12px;letter-spacing:0.3px;animation:rise 0.7s 0.2s both;}
+  footer .gold{color:rgba(201,168,76,0.6);}
+</style>
+</head>
+<body>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+  <div class="orb c"></div>
+
+  <div class="wrap">
+    <header>
+      <img class="logo" src="uploads/bha-logo.png" alt="The Brook Hill Alliance" />
+      <div class="kicker">The Brook Hill Alliance</div>
+      <h1>Events</h1>
+      <p class="sub">Everything happening this summer — pick a category to jump in. 🎉</p>
+    </header>
+
+    <div class="cards">
+
+      <!-- DISCOS — live -->
+      <a class="card live" href="https://brookhill-disco-2026.web.app/" style="animation-delay:.05s;">
+        <div class="ic" style="background:linear-gradient(150deg,#a855f7 0%, rgba(0,0,0,0.3) 140%);">🪩</div>
+        <div class="body">
+          <div class="t">Discos</div>
+          <div class="d">Song requests, RSVP & roster check-in</div>
+        </div>
+        <span class="pill go">● Live</span>
+      </a>
+
+      <!-- RECREATION — coming soon -->
+      <div class="card soon" style="animation-delay:.12s;">
+        <div class="ic" style="background:linear-gradient(150deg,#22d3ee 0%, rgba(0,0,0,0.3) 140%);">🏀</div>
+        <div class="body">
+          <div class="t">Recreation</div>
+          <div class="d">Sports, fitness & outdoor activities</div>
+        </div>
+        <span class="pill">Coming soon</span>
+      </div>
+
+      <!-- SOCIAL GAMES — coming soon -->
+      <div class="card soon" style="animation-delay:.19s;">
+        <div class="ic" style="background:linear-gradient(150deg,#ec4899 0%, rgba(0,0,0,0.3) 140%);">🎲</div>
+        <div class="body">
+          <div class="t">Social Games</div>
+          <div class="d">Game nights, trivia & socials</div>
+        </div>
+        <span class="pill">Coming soon</span>
+      </div>
+
+      <!-- MORE — coming soon -->
+      <div class="card soon" style="animation-delay:.26s;">
+        <div class="ic" style="background:linear-gradient(150deg,#fbbf24 0%, rgba(0,0,0,0.3) 140%);">✨</div>
+        <div class="body">
+          <div class="t">More to come</div>
+          <div class="d">New events added through the summer</div>
+        </div>
+        <span class="pill">Stay tuned</span>
+      </div>
+
+    </div>
+
+    <footer>
+      Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026
+    </footer>
+  </div>
+</body>
+</html>
