@@ -28,8 +28,16 @@
     <footer>Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026</footer>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="reserve.js"></script>
   <script src="data.js"></script>
   <script src="schedule.js"></script>
-  <script>renderSchedule('list', (window.BHA_SCHEDULE || {}).recreation || [], '#22d3ee');</script>
+  <script>
+    BHAReserve.init('recreation');
+    renderSchedule('list', (window.BHA_SCHEDULE || {}).recreation || [], { accent: '#22d3ee', category: 'recreation' });
+  </script>
 </body>
 </html>
