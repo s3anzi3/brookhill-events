@@ -46,7 +46,8 @@
       if (typeof firebase === 'undefined' || !window.BHA_FIREBASE_CONFIG) return false;
       if (!firebase.apps.length) firebase.initializeApp(window.BHA_FIREBASE_CONFIG);
       BHA._db = firebase.firestore();
-      BHA._functions = firebase.functions();
+      // Functions SDK is optional — only the reserve/identify flows need it.
+      BHA._functions = (typeof firebase.functions === 'function') ? firebase.functions() : null;
       return true;
     } catch (e) { console.warn('Reserve init:', e); return false; }
   };

@@ -47,8 +47,9 @@
       <div class="lock">🔒</div>
       <h2>Staff access</h2>
       <p>Brook Hill Alliance staff only.</p>
-      <input id="pw" type="password" placeholder="Password" autocomplete="off">
-      <button id="enter">Enter</button>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" inputmode="email">
+      <input id="pw" type="password" placeholder="Password" autocomplete="current-password" style="margin-top:10px;">
+      <button id="enter">Sign in</button>
       <div class="err" id="gerr"></div>
     </div>
   </div>
@@ -56,6 +57,7 @@
   <div class="wrap" id="app" style="display:none;">
     <div class="topbar">
       <a class="back" href="index.html" aria-label="Back to Brook Hill Events">←</a>
+      <button class="tb-link" id="signout" type="button" style="cursor:pointer;font-family:inherit;">Sign out</button>
     </div>
     <header>
       <div class="kicker">Brook Hill Alliance Events</div>
@@ -69,35 +71,68 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="reserve.js"></script>
   <script src="data.js"></script>
   <script>
   (function () {
-    // Client-side gate only (same posture as the disco DJ portal). The reservation
-    // data is publicly readable by Firestore rules, so this is convenience, not
-    // real security — keep the link off the public hub.
-    var PASSWORD = 'hoboken';
+    // Real auth: a single Firebase Auth (email/password) staff account gates this
+    // page. No password lives in the source. NOTE: reservation docs are still
+    // publicly readable by Firestore rules (the public schedule pages + disco DJ
+    // dashboard rely on that) — locking the name data itself down is the next step
+    // (see ROADMAP). Keep this link off public posters until then.
     var CATS = [
       { key: 'recreation', list: 'recreation', emoji: '🏀', name: 'Recreation', accent: '#22d3ee' },
       { key: 'social',     list: 'social',     emoji: '🎲', name: 'Social Rooms', accent: '#ec4899' }
     ];
     var gate = document.getElementById('gate');
     var app = document.getElementById('app');
+    var emailEl = document.getElementById('email');
     var pw = document.getElementById('pw');
     var gerr = document.getElementById('gerr');
+    var enterBtn = document.getElementById('enter');
 
-    function unlock() {
-      if (pw.value !== PASSWORD) { gerr.textContent = 'Wrong password.'; pw.value = ''; pw.focus(); return; }
-      try { localStorage.setItem('bha_staff_ok', '1'); } catch (e) {}
-      gate.style.display = 'none';
-      app.style.display = 'block';
-      start();
+    if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function' || !window.BHA_FIREBASE_CONFIG) {
+      gerr.textContent = 'Sign-in unavailable — check your connection.';
+      return;
     }
-    document.getElementById('enter').addEventListener('click', unlock);
-    pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') unlock(); });
-    try { if (localStorage.getItem('bha_staff_ok') === '1') { gate.style.display = 'none'; app.style.display = 'block'; start(); } }
-    catch (e) {}
+    if (!firebase.apps.length) firebase.initializeApp(window.BHA_FIREBASE_CONFIG);
+    var auth = firebase.auth();
+
+    function signIn() {
+      var email = emailEl.value.trim();
+      if (!email || !pw.value) { gerr.textContent = 'Enter your email and password.'; return; }
+      gerr.textContent = 'Signing in…';
+      enterBtn.disabled = true;
+      auth.signInWithEmailAndPassword(email, pw.value)
+        .catch(function (e) {
+          enterBtn.disabled = false;
+          var code = (e && e.code) || '';
+          gerr.textContent = (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found')
+            ? 'Incorrect email or password.'
+            : 'Sign-in failed — try again.';
+          pw.value = '';
+        });
+    }
+    enterBtn.addEventListener('click', signIn);
+    pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
+    emailEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') pw.focus(); });
+    document.getElementById('signout').addEventListener('click', function () { auth.signOut(); });
+
+    // Auth state drives which view shows. Only a signed-in staff account sees data.
+    auth.onAuthStateChanged(function (user) {
+      if (user) {
+        gate.style.display = 'none';
+        app.style.display = 'block';
+        enterBtn.disabled = false;
+        pw.value = '';
+        start();
+      } else {
+        app.style.display = 'none';
+        gate.style.display = 'flex';
+      }
+    });
 
     function todayISO() {
       var d = new Date();

@@ -32,8 +32,13 @@ This is the running list of what could come next, roughly in priority order.
 - [ ] **Reminders** — opt-in day-of notification (would need email/SMS or web push).
 
 ## Hardening / nice-to-have
-- [ ] **Real staff auth** — the disco portal password is client-side; if the
-      dashboard ships, gate writes/reads on Firebase Auth.
+- [x] **Real staff login** — staff.html now uses a real Firebase Auth
+      (email/password) account instead of a hardcoded password.
+- [ ] **Lock down the name data** — reservation docs are still publicly readable
+      (the schedule pages + disco DJ dashboard depend on it). To make names truly
+      staff-only: gate `rsvps` reads on `request.auth`, move public "going" counts
+      to a Cloud Function-maintained counter, and give the disco DJ dashboard the
+      same auth treatment (shared rules).
 - [ ] **Rules consolidation** — the `sessions/*/rsvps` rules live in the disco repo
       (shared DB). Consider a single source-of-truth rules file if this grows.
 - [ ] **Analytics** — simple count of reservations per session over time.

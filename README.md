@@ -41,14 +41,24 @@ device isn't checked in yet, it offers a roster check-in (`BHAReserve.identify`)
 Filters `collectionGroup('rsvps')` by the remembered `studentId` + `status: going`.
 
 ### Staff dashboard (`staff.html`)
-Password-gated (`hoboken`, stored in `localStorage`) page listing every upcoming
-session per category with the roster of who's reserved (name + group), updating
-live. Merges `data.js` (so empty sessions still show) with the `rsvps` snapshot.
-Linked discreetly from the hub footer and `noindex`'d.
+Gated by a **real Firebase Auth (email/password) account** — no password in the
+source. A single staff account signs in; `onAuthStateChanged` decides whether the
+dashboard shows. Lists every upcoming session per category with the roster of
+who's reserved (name + group), updating live. Merges `data.js` (so empty sessions
+still show) with the `rsvps` snapshot. Linked discreetly from the hub footer and
+`noindex`'d. Sign out via the topbar.
 
-> ⚠️ The gate is **client-side convenience, not security** — same posture as the
-> disco DJ portal. Reservation docs are publicly readable by Firestore rules and
-> hold first names + group only (no DOB). Keep the staff link off public posters.
+**One-time setup** (Firebase console → project `brookhill-disco-2026`):
+1. **Authentication → Sign-in method → Email/Password → Enable.**
+2. **Authentication → Users → Add user** → enter the staff email + a password.
+
+That account is the only way into the dashboard.
+
+> ⚠️ Still to do (see ROADMAP): the reservation docs remain **publicly readable**
+> by Firestore rules — the public schedule pages and the disco DJ dashboard rely
+> on that. They hold first names + group only (no DOB). Real login closes the
+> front door; making the name data itself staff-only is the next step and would
+> also touch the shared rules the disco app uses.
 
 ### ⚠️ Security rules live in the disco repo
 The `sessions/*/rsvps` write rules were added to **`brookhill-disco/firestore.rules`**
