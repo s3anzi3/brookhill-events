@@ -6,17 +6,22 @@
 // the roster (which never reaches the browser) and, on a match, write a doc at
 //     sessions/{sessionId}/rsvps/{studentId}
 // Live "going" counts come from one collectionGroup('rsvps') listener.
+//
+// Consumed by: recreation.html / social-rooms.html (init + reserve), the staff
+// dashboard (initDb + its own query) and my-reservations.html (identify + cancel).
 (function () {
   var GROUPS = ['1C-NIA', '1G'];
 
   var BHA = window.BHAReserve = {
-    category: '',          // set by each page before init()
+    category: '',          // set by each schedule page before init()
     _db: null,
     _functions: null,
     _counts: {},           // sessionId -> going count
     _mine: {},             // sessionId -> true if this student is going
     _verifying: false,
-    _pending: null,        // session meta awaiting verification
+    _pending: null,        // session meta awaiting verification (reserve mode)
+    _mode: 'reserve',      // 'reserve' | 'identify'
+    _onId: null,           // callback for identify mode
   };
 
   // ── stable per-session id (must match the one schedule.js renders) ──
@@ -32,17 +37,24 @@
   function remember(stu) {
     try { localStorage.setItem('bha_checked_in_student', JSON.stringify(stu)); } catch (e) {}
   }
+  BHA.current = function () { return remembered(); };
 
   // ── Firebase ──
-  BHA.init = function (category) {
-    BHA.category = category;
+  // initDb(): just connect (staff dashboard / my-reservations run their own queries).
+  BHA.initDb = function () {
     try {
-      if (typeof firebase === 'undefined' || !window.BHA_FIREBASE_CONFIG) return;
+      if (typeof firebase === 'undefined' || !window.BHA_FIREBASE_CONFIG) return false;
       if (!firebase.apps.length) firebase.initializeApp(window.BHA_FIREBASE_CONFIG);
       BHA._db = firebase.firestore();
       BHA._functions = firebase.functions();
-      BHA._subscribe();
-    } catch (e) { console.warn('Reserve init:', e); }
+      return true;
+    } catch (e) { console.warn('Reserve init:', e); return false; }
+  };
+
+  // init(category): connect + live counts for a schedule page.
+  BHA.init = function (category) {
+    BHA.category = category;
+    if (BHA.initDb()) BHA._subscribe();
   };
 
   // One collection-group listener feeds every session's count on this page.
@@ -80,49 +92,79 @@
     });
   };
 
-  // ── reserve / cancel ──
-  function writeRsvp(session, stu, status) {
+  // ── low-level write ──
+  BHA._write = function (sid, category, meta, stu, status) {
     if (!BHA._db) return Promise.reject(new Error('offline'));
-    var sid = BHA.sessionId(BHA.category, session.date, session.time);
     return BHA._db.collection('sessions').doc(sid).collection('rsvps').doc(stu.studentId).set({
       status: status,
       name: stu.name,
       group: stu.group || '',
+      studentId: stu.studentId,
       sessionId: sid,
-      category: BHA.category,
-      date: session.date,
-      time: session.time || '',
-      loc: session.loc || '',
+      category: category,
+      date: meta.date,
+      time: meta.time || '',
+      loc: meta.loc || '',
       at: new Date().toISOString()
     });
-  }
+  };
 
+  // ── reserve / cancel ──
   // Called by the schedule list. Toggles: if already in → cancel; else reserve.
   BHA.toggle = function (session) {
     var sid = BHA.sessionId(BHA.category, session.date, session.time);
     var stu = remembered();
     if (stu && stu.studentId) {
       var goin = BHA._mine[sid];
-      writeRsvp(session, stu, goin ? 'declined' : 'going')
+      BHA._write(sid, BHA.category, session, stu, goin ? 'declined' : 'going')
         .then(function () { toast(goin ? 'Reservation cancelled' : "You're in! 🎉"); })
         .catch(function () { toast('Something went wrong — try again', true); });
       return;
     }
-    BHA._openModal(session);
+    BHA._openModal(session, 'reserve');
+  };
+
+  // Cancel a reservation given its stored rsvp record (My Reservations page).
+  BHA.cancel = function (r) {
+    var stu = remembered();
+    if (!stu || !stu.studentId) return Promise.reject(new Error('no-id'));
+    return BHA._write(r.sessionId, r.category, { date: r.date, time: r.time, loc: r.loc }, stu, 'declined');
+  };
+
+  // Identify-only check-in (no session) — used by My Reservations.
+  BHA.identify = function (onDone) {
+    var stu = remembered();
+    if (stu && stu.studentId) { if (onDone) onDone(stu); return; }
+    BHA._onId = onDone || null;
+    BHA._openModal(null, 'identify');
   };
 
   // ── check-in modal ──
-  BHA._openModal = function (session) {
+  BHA._openModal = function (session, mode) {
     BHA._pending = session;
+    BHA._mode = mode || 'reserve';
     var m = document.getElementById('bha-modal');
     m.querySelector('#bm-first').value = '';
     m.querySelector('#bm-dob').value = '';
     m.querySelector('#bm-group').value = '';
     BHA._setErr('');
-    var dt = new Date(session.date + 'T00:00:00');
-    m.querySelector('#bm-when').textContent =
-      dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) +
-      ' · ' + (session.time || '');
+    var title = m.querySelector('.bm-title');
+    var when = m.querySelector('#bm-when');
+    var note = m.querySelector('.bm-note');
+    var go = m.querySelector('#bm-go');
+    if (BHA._mode === 'identify') {
+      title.textContent = 'Check in';
+      when.textContent = '';
+      note.textContent = 'Check in against the camp roster to see your reservations.';
+      go.textContent = 'Check in';
+    } else {
+      title.textContent = 'Reserve a spot';
+      var dt = new Date(session.date + 'T00:00:00');
+      when.textContent = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) +
+        ' · ' + (session.time || '');
+      note.textContent = 'Check in against the camp roster so we know who’s coming.';
+      go.textContent = 'Reserve my spot';
+    }
     m.classList.add('open');
     setTimeout(function () { m.querySelector('#bm-first').focus(); }, 60);
   };
@@ -137,7 +179,8 @@
   };
 
   BHA._submit = function () {
-    if (BHA._verifying || !BHA._pending) return;
+    if (BHA._verifying) return;
+    if (BHA._mode === 'reserve' && !BHA._pending) return;
     var m = document.getElementById('bha-modal');
     var first = m.querySelector('#bm-first').value.trim();
     var dob = m.querySelector('#bm-dob').value;
@@ -157,9 +200,15 @@
         }
         var stu = { name: data.firstName || first, studentId: data.studentId, group: data.group || group || '' };
         remember(stu);
+        if (BHA._mode === 'identify') {
+          var cb = BHA._onId; BHA._onId = null;
+          BHA._closeModal();
+          if (cb) cb(stu);
+          return;
+        }
         var session = BHA._pending;
         BHA._closeModal();
-        writeRsvp(session, stu, 'going')
+        BHA._write(BHA.sessionId(BHA.category, session.date, session.time), BHA.category, session, stu, 'going')
           .then(function () { toast("You're in! 🎉"); })
           .catch(function () { toast('Saved your check-in, but reserving failed — try again', true); });
       })
@@ -179,6 +228,7 @@
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { t.className = ''; }, 2600);
   }
+  BHA.toast = toast;
 
   // ── inject modal markup once ──
   function injectModal() {

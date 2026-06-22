@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Reservations · Brook Hill Events</title>
+<link rel="icon" href="uploads/bha-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .orb.a{background:radial-gradient(circle,rgba(201,168,76,0.10) 0%,transparent 65%);}
+  .orb.b{background:radial-gradient(circle,rgba(168,85,247,0.07) 0%,transparent 65%);}
+</style>
+</head>
+<body>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="Back to Brook Hill Events">←</a>
+    </div>
+    <header>
+      <div class="kicker">Brook Hill Alliance Events</div>
+      <h1>🎟️ My Reservations</h1>
+      <p class="sub" id="who">Everything you’ve signed up for, in one place.</p>
+    </header>
+    <div id="list" class="list"></div>
+    <footer>Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026</footer>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="reserve.js"></script>
+  <script>
+  (function () {
+    var CATS = {
+      recreation: { emoji: '🏀', name: 'Recreation', accent: '#22d3ee' },
+      social:     { emoji: '🎲', name: 'Social Rooms', accent: '#ec4899' }
+    };
+    var list = document.getElementById('list');
+    var who = document.getElementById('who');
+
+    BHAReserve.initDb();
+
+    function todayISO() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function showCheckIn() {
+      list.innerHTML =
+        '<div class="empty">Check in to see your reservations.<br><br>' +
+        '<button id="ci" class="bm-go" style="max-width:240px;margin:0 auto;">Check in</button></div>';
+      document.getElementById('ci').addEventListener('click', function () {
+        BHAReserve.identify(function () { start(); });
+      });
+    }
+
+    function render(rows) {
+      var stu = BHAReserve.current();
+      who.textContent = stu ? ('Signed in as ' + stu.name + (stu.group ? ' · ' + stu.group : '')) : '';
+      if (!rows.length) {
+        list.innerHTML = '<div class="empty">You haven’t reserved anything yet.<br>Head to Recreation or Social Rooms to grab a spot. 🎉</div>';
+        return;
+      }
+      var today = todayISO();
+      rows.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      list.innerHTML = '';
+      rows.forEach(function (r, i) {
+        var c = CATS[r.category] || { emoji: '📌', name: r.category, accent: '#94a3b8' };
+        var dt = new Date(r.date + 'T00:00:00');
+        var weekday = dt.toLocaleDateString('en-US', { weekday: 'long' });
+        var month = dt.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        var day = String(dt.getDate());
+        var isPast = r.date < today;
+        var loc = (r.loc && r.loc.toLowerCase() !== 'n/a') ? r.loc : 'TBD';
+
+        var el = document.createElement('div');
+        el.className = 'slot' + (isPast ? ' past' : '');
+        el.style.animationDelay = (Math.min(i, 12) * 0.04) + 's';
+        el.innerHTML =
+          '<div class="slot-main">' +
+            '<div class="badge" style="background:linear-gradient(150deg,' + c.accent + ' 0%, rgba(0,0,0,0.32) 140%);box-shadow:0 4px 18px ' + c.accent + '40;">' +
+              '<div class="m">' + month + '</div><div class="d">' + day + '</div>' +
+            '</div>' +
+            '<div class="info">' +
+              '<div class="wd">' + c.emoji + ' ' + c.name + '</div>' +
+              '<div class="meta"><span>' + weekday + '</span><span class="dot">·</span><span>' + r.time + '</span><span class="dot">·</span><span>📍 ' + loc + '</span></div>' +
+            '</div>' +
+          '</div>';
+
+        if (!isPast) {
+          var row = document.createElement('div');
+          row.className = 'rsvp';
+          row.innerHTML = '<span class="rsvp-cnt" style="color:#4ade80;">✓ Reserved</span>' +
+            '<button class="rsvp-btn cancel" type="button">Cancel spot</button>';
+          row.querySelector('.cancel').addEventListener('click', function () {
+            BHAReserve.cancel(r)
+              .then(function () { BHAReserve.toast('Reservation cancelled'); })
+              .catch(function () { BHAReserve.toast('Could not cancel — try again', true); });
+          });
+          el.appendChild(row);
+        }
+        list.appendChild(el);
+      });
+    }
+
+    function start() {
+      var stu = BHAReserve.current();
+      if (!stu || !stu.studentId) { showCheckIn(); return; }
+      list.innerHTML = '<div class="empty">Loading your reservations… ⏳</div>';
+      BHAReserve._db.collectionGroup('rsvps').onSnapshot(function (snap) {
+        var rows = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          if (d.studentId === stu.studentId && d.status === 'going' && d.sessionId) rows.push(d);
+        });
+        render(rows);
+      }, function (err) {
+        console.warn('my rsvps:', err);
+        list.innerHTML = '<div class="empty">Couldn’t load your reservations — check your connection.</div>';
+      });
+    }
+
+    start();
+  })();
+  </script>
+</body>
+</html>

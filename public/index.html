@@ -55,8 +55,16 @@
         padding:5px 11px;border-radius:20px;background:rgba(148,163,184,0.12);border:1px solid rgba(148,163,184,0.25);color:#94a3b8;white-space:nowrap;}
   .pill.go{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.28);color:#4ade80;}
 
+  .myres{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;padding:14px;border-radius:16px;
+         background:rgba(201,168,76,0.08);border:1.5px solid rgba(201,168,76,0.28);color:#E7C75A;
+         font-size:14.5px;font-weight:700;letter-spacing:0.2px;animation:rise 0.6s .32s both;transition:transform .14s ease,background .14s ease;}
+  .myres:hover{transform:translateY(-2px);background:rgba(201,168,76,0.13);}
+  .myres:active{transform:scale(0.99);}
+
   footer{margin-top:auto;padding-top:40px;text-align:center;color:#4b5563;font-size:12px;letter-spacing:0.3px;animation:rise 0.7s 0.2s both;}
   footer .gold{color:rgba(201,168,76,0.6);}
+  footer .staff{display:inline-block;margin-top:10px;color:#374151;font-size:11px;letter-spacing:0.5px;}
+  footer .staff:hover{color:#64748b;}
 </style>
 </head>
 <body>
@@ -116,8 +124,11 @@
 
     </div>
 
+    <a class="myres" href="my-reservations.html">🎟️ My reservations</a>
+
     <footer>
       Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026
+      <br><a class="staff" href="staff.html">Staff</a>
     </footer>
   </div>
 </body>

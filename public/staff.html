@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Staff · Brook Hill Events</title>
+<link rel="icon" href="uploads/bha-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  .orb.a{background:radial-gradient(circle,rgba(201,168,76,0.12) 0%,transparent 65%);}
+  .orb.b{background:radial-gradient(circle,rgba(34,211,238,0.07) 0%,transparent 65%);}
+
+  /* password gate */
+  #gate{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:24px;background:#060611;}
+  #gate .box{width:100%;max-width:360px;text-align:center;}
+  #gate .lock{font-size:40px;margin-bottom:14px;}
+  #gate h2{font-size:22px;font-weight:800;margin-bottom:8px;}
+  #gate p{font-size:13px;color:#64748b;margin-bottom:20px;}
+  #gate input{width:100%;background:rgba(255,255,255,0.06);border:1.5px solid rgba(201,168,76,0.3);color:#f8fafc;
+              border-radius:14px;padding:14px 16px;font-family:inherit;font-size:16px;outline:none;text-align:center;}
+  #gate button{width:100%;margin-top:12px;border:none;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;
+               font-size:16px;font-weight:800;color:#06121a;background:linear-gradient(135deg,#E7C75A,#C9A84C);}
+  #gate .err{color:#fca5a5;font-size:13px;margin-top:12px;min-height:18px;}
+
+  .cat{margin-bottom:30px;}
+  .cat-h{display:flex;align-items:baseline;gap:9px;margin:0 2px 12px;}
+  .cat-h .ct{font-size:19px;font-weight:800;letter-spacing:-0.4px;}
+  .cat-h .cn{font-size:12.5px;color:#64748b;}
+  .names{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);}
+  .chip{font-size:12.5px;font-weight:600;color:#e2e8f0;background:rgba(255,255,255,0.06);
+        border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:5px 11px;}
+  .chip .g{color:#64748b;font-weight:500;margin-left:4px;}
+  .none{font-size:12.5px;color:#475569;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);}
+  .cnt-pill{margin-left:auto;font-size:12px;font-weight:700;color:#E7C75A;background:rgba(201,168,76,0.12);
+            border:1px solid rgba(201,168,76,0.28);border-radius:20px;padding:4px 10px;}
+  .total{font-size:13px;color:#94a3b8;text-align:center;margin:0 0 24px;}
+</style>
+</head>
+<body>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+
+  <div id="gate">
+    <div class="box">
+      <div class="lock">🔒</div>
+      <h2>Staff access</h2>
+      <p>Brook Hill Alliance staff only.</p>
+      <input id="pw" type="password" placeholder="Password" autocomplete="off">
+      <button id="enter">Enter</button>
+      <div class="err" id="gerr"></div>
+    </div>
+  </div>
+
+  <div class="wrap" id="app" style="display:none;">
+    <div class="topbar">
+      <a class="back" href="index.html" aria-label="Back to Brook Hill Events">←</a>
+    </div>
+    <header>
+      <div class="kicker">Brook Hill Alliance Events</div>
+      <h1>📋 Staff Dashboard</h1>
+      <p class="sub">Who’s reserved for each upcoming session. Updates live.</p>
+    </header>
+    <p class="total" id="total"></p>
+    <div id="cats"></div>
+    <footer>Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026</footer>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="reserve.js"></script>
+  <script src="data.js"></script>
+  <script>
+  (function () {
+    // Client-side gate only (same posture as the disco DJ portal). The reservation
+    // data is publicly readable by Firestore rules, so this is convenience, not
+    // real security — keep the link off the public hub.
+    var PASSWORD = 'hoboken';
+    var CATS = [
+      { key: 'recreation', list: 'recreation', emoji: '🏀', name: 'Recreation', accent: '#22d3ee' },
+      { key: 'social',     list: 'social',     emoji: '🎲', name: 'Social Rooms', accent: '#ec4899' }
+    ];
+    var gate = document.getElementById('gate');
+    var app = document.getElementById('app');
+    var pw = document.getElementById('pw');
+    var gerr = document.getElementById('gerr');
+
+    function unlock() {
+      if (pw.value !== PASSWORD) { gerr.textContent = 'Wrong password.'; pw.value = ''; pw.focus(); return; }
+      try { localStorage.setItem('bha_staff_ok', '1'); } catch (e) {}
+      gate.style.display = 'none';
+      app.style.display = 'block';
+      start();
+    }
+    document.getElementById('enter').addEventListener('click', unlock);
+    pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') unlock(); });
+    try { if (localStorage.getItem('bha_staff_ok') === '1') { gate.style.display = 'none'; app.style.display = 'block'; start(); } }
+    catch (e) {}
+
+    function todayISO() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    var started = false;
+    function start() {
+      if (started) return; started = true;
+      if (!BHAReserve.initDb()) {
+        document.getElementById('cats').innerHTML = '<div class="empty">Couldn’t connect — check your connection.</div>';
+        return;
+      }
+      render({}); // initial schedule with zero counts
+      BHAReserve._db.collectionGroup('rsvps').onSnapshot(function (snap) {
+        var by = {}; // sessionId -> [ {name, group} ]
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          if (!d.sessionId || d.status !== 'going') return;
+          (by[d.sessionId] = by[d.sessionId] || []).push({ name: d.name || '?', group: d.group || '' });
+        });
+        render(by);
+      }, function (err) { console.warn('staff snapshot:', err); });
+    }
+
+    function render(by) {
+      var today = todayISO();
+      var sched = window.BHA_SCHEDULE || {};
+      var wrap = document.getElementById('cats');
+      wrap.innerHTML = '';
+      var grandTotal = 0;
+
+      CATS.forEach(function (cat) {
+        var sessions = (sched[cat.list] || []).filter(function (s) { return s.date >= today; });
+        var sec = document.createElement('div');
+        sec.className = 'cat';
+        var head = '<div class="cat-h"><span class="ct">' + cat.emoji + ' ' + cat.name + '</span>' +
+                   '<span class="cn">' + sessions.length + ' upcoming</span></div>';
+        var body = '';
+        if (!sessions.length) {
+          body = '<div class="empty">No upcoming sessions.</div>';
+        } else {
+          sessions.forEach(function (s) {
+            var sid = BHAReserve.sessionId(cat.key, s.date, s.time);
+            var people = (by[sid] || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+            grandTotal += people.length;
+            var dt = new Date(s.date + 'T00:00:00');
+            var weekday = dt.toLocaleDateString('en-US', { weekday: 'long' });
+            var month = dt.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+            var day = String(dt.getDate());
+            var loc = (s.loc && s.loc.toLowerCase() !== 'n/a') ? s.loc : 'TBD';
+            var time = String(s.time || '').replace(/pm/i, ' PM').replace(/am/i, ' AM').trim();
+
+            var chips = people.length
+              ? '<div class="names">' + people.map(function (p) {
+                  return '<span class="chip">' + esc(p.name) + (p.group ? '<span class="g">' + esc(p.group) + '</span>' : '') + '</span>';
+                }).join('') + '</div>'
+              : '<div class="none">No reservations yet.</div>';
+
+            body +=
+              '<div class="slot" style="margin-bottom:11px;">' +
+                '<div class="slot-main">' +
+                  '<div class="badge" style="background:linear-gradient(150deg,' + cat.accent + ' 0%, rgba(0,0,0,0.32) 140%);box-shadow:0 4px 18px ' + cat.accent + '40;">' +
+                    '<div class="m">' + month + '</div><div class="d">' + day + '</div>' +
+                  '</div>' +
+                  '<div class="info">' +
+                    '<div class="wd">' + weekday + '</div>' +
+                    '<div class="meta"><span>' + time + '</span><span class="dot">·</span><span>📍 ' + loc + '</span></div>' +
+                  '</div>' +
+                  '<span class="cnt-pill">' + people.length + ' 👥</span>' +
+                '</div>' +
+                chips +
+              '</div>';
+          });
+        }
+        sec.innerHTML = head + body;
+        wrap.appendChild(sec);
+      });
+
+      document.getElementById('total').textContent = grandTotal + (grandTotal === 1 ? ' reservation' : ' reservations') + ' across upcoming sessions';
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

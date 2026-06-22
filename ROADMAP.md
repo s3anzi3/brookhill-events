@@ -3,16 +3,22 @@
 The hub is live with roster-verified reservations on Recreation and Social Rooms.
 This is the running list of what could come next, roughly in priority order.
 
+## Done
+- [x] **Roster-verified reservations** on Recreation + Social Rooms (live counts,
+      one-tap reserve/cancel).
+- [x] **Staff dashboard** (`staff.html`) — password-gated, who's reserved per
+      session, live.
+- [x] **My Reservations** (`my-reservations.html`) — a student's own reservations
+      across categories, with cancel.
+
 ## Near term
-- [ ] **DJ/staff reservation dashboard** — a password-gated page (reuse the disco
-      portal's "tap logo 5×" + password pattern) that lists each session with its
-      roster of who reserved. Reads `sessions/*/rsvps` via `collectionGroup`.
-- [ ] **Capacity caps + waitlist** — optional `max` per session in `data.js`; lock
-      the button when full, offer a waitlist slot.
+- [ ] ~~Capacity caps + waitlist~~ — not wanted (per Panky).
 - [ ] **Cancel confirmation** — a small "Cancel your spot?" confirm instead of the
       current one-tap toggle, to avoid accidental cancels.
 - [ ] **Per-session detail** — what's actually happening (e.g. "3v3 basketball",
       "movie night: TBD"). Add a `title`/`desc` field to `data.js` slots.
+- [ ] **Staff: export / past sessions** — let staff see past attendance and export
+      a session's list (CSV / copy).
 
 ## Medium term
 - [ ] **More categories** — activate the ✨ "More to come" hub card for new event
