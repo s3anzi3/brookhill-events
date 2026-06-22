@@ -47,7 +47,7 @@
       <div class="lock">🔒</div>
       <h2>Staff access</h2>
       <p>Brook Hill Alliance staff only.</p>
-      <input id="email" type="email" placeholder="Email" autocomplete="username" inputmode="email">
+      <input id="user" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
       <input id="pw" type="password" placeholder="Password" autocomplete="current-password" style="margin-top:10px;">
       <button id="enter">Sign in</button>
       <div class="err" id="gerr"></div>
@@ -86,9 +86,14 @@
       { key: 'recreation', list: 'recreation', emoji: '🏀', name: 'Recreation', accent: '#22d3ee' },
       { key: 'social',     list: 'social',     emoji: '🎲', name: 'Social Rooms', accent: '#ec4899' }
     ];
+    // Staff sign in with a username only. Firebase's email/password provider needs
+    // an email-format identifier, so we append a fixed internal domain behind the
+    // scenes — no real email is involved or shown. Create the single account in the
+    // console with email = <username>@brookhill-staff.local.
+    var USER_DOMAIN = '@brookhill-staff.local';
     var gate = document.getElementById('gate');
     var app = document.getElementById('app');
-    var emailEl = document.getElementById('email');
+    var userEl = document.getElementById('user');
     var pw = document.getElementById('pw');
     var gerr = document.getElementById('gerr');
     var enterBtn = document.getElementById('enter');
@@ -101,23 +106,23 @@
     var auth = firebase.auth();
 
     function signIn() {
-      var email = emailEl.value.trim();
-      if (!email || !pw.value) { gerr.textContent = 'Enter your email and password.'; return; }
+      var user = userEl.value.trim().toLowerCase();
+      if (!user || !pw.value) { gerr.textContent = 'Enter your username and password.'; return; }
       gerr.textContent = 'Signing in…';
       enterBtn.disabled = true;
-      auth.signInWithEmailAndPassword(email, pw.value)
+      auth.signInWithEmailAndPassword(user + USER_DOMAIN, pw.value)
         .catch(function (e) {
           enterBtn.disabled = false;
           var code = (e && e.code) || '';
           gerr.textContent = (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found')
-            ? 'Incorrect email or password.'
+            ? 'Incorrect username or password.'
             : 'Sign-in failed — try again.';
           pw.value = '';
         });
     }
     enterBtn.addEventListener('click', signIn);
     pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
-    emailEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') pw.focus(); });
+    userEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') pw.focus(); });
     document.getElementById('signout').addEventListener('click', function () { auth.signOut(); });
 
     // Auth state drives which view shows. Only a signed-in staff account sees data.

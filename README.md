@@ -41,18 +41,24 @@ device isn't checked in yet, it offers a roster check-in (`BHAReserve.identify`)
 Filters `collectionGroup('rsvps')` by the remembered `studentId` + `status: going`.
 
 ### Staff dashboard (`staff.html`)
-Gated by a **real Firebase Auth (email/password) account** — no password in the
-source. A single staff account signs in; `onAuthStateChanged` decides whether the
-dashboard shows. Lists every upcoming session per category with the roster of
-who's reserved (name + group), updating live. Merges `data.js` (so empty sessions
-still show) with the `rsvps` snapshot. Linked discreetly from the hub footer and
-`noindex`'d. Sign out via the topbar.
+Gated by a **real Firebase Auth account** — no password in the source. Staff sign
+in with a **username + password** (no email). Firebase's email/password provider
+needs an email-format id, so the page appends a fixed internal domain
+(`@brookhill-staff.local`, set in `staff.html` as `USER_DOMAIN`) behind the
+scenes — no real email is involved or shown. A single account signs in;
+`onAuthStateChanged` decides whether the dashboard shows. Lists every upcoming
+session per category with the roster of who's reserved (name + group), updating
+live. Merges `data.js` (so empty sessions still show) with the `rsvps` snapshot.
+Linked discreetly from the hub footer and `noindex`'d. Sign out via the topbar.
 
 **One-time setup** (Firebase console → project `brookhill-disco-2026`):
 1. **Authentication → Sign-in method → Email/Password → Enable.**
-2. **Authentication → Users → Add user** → enter the staff email + a password.
+2. **Authentication → Users → Add user** → for the email enter
+   `<username>@brookhill-staff.local` (e.g. `brookhill@brookhill-staff.local`),
+   and set a password.
 
-That account is the only way into the dashboard.
+Staff then log in with just that `<username>` and password. That account is the
+only way into the dashboard.
 
 > ⚠️ Still to do (see ROADMAP): the reservation docs remain **publicly readable**
 > by Firestore rules — the public schedule pages and the disco DJ dashboard rely
