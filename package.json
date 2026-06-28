@@ -1,0 +1,14 @@
+{
+  "name": "brookhill-events",
+  "private": true,
+  "description": "Brook Hill Events — front-end build (Firebase modular SDK, bundled with esbuild)",
+  "scripts": {
+    "build": "esbuild src/app.js --bundle --minify --format=iife --target=es2019 --legal-comments=none --outfile=public/app.bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "firebase": "^10.14.1"
+  }
+}

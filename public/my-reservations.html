@@ -32,11 +32,7 @@
     <footer>Discos by <span class="gold">The Brook Hill Alliance</span> · Summer 2026</footer>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="reserve.js"></script>
+  <script src="app.bundle.js"></script>
   <script>
   (function () {
     var CATS = {
@@ -115,15 +111,9 @@
       var stu = BHAReserve.current();
       if (!stu || !stu.studentId) { showCheckIn(); return; }
       list.innerHTML = '<div class="empty">Loading your reservations… ⏳</div>';
-      // Filter to THIS student server-side (collection-group index on
-      // rsvps.studentId) — no longer downloads every other student's docs.
-      BHAReserve._db.collectionGroup('rsvps').where('studentId', '==', stu.studentId).onSnapshot(function (snap) {
-        var rows = [];
-        snap.forEach(function (doc) {
-          var d = doc.data() || {};
-          if (d.status === 'going' && d.sessionId) rows.push(d);
-        });
-        render(rows);
+      // Filtered to THIS student server-side (rsvps.studentId index) inside the bundle.
+      BHAReserve.watchByStudent(stu.studentId, function (all) {
+        render(all.filter(function (d) { return d.status === 'going' && d.sessionId; }));
       }, function (err) {
         console.warn('my rsvps:', err);
         list.innerHTML = '<div class="empty">Couldn’t load your reservations — check your connection.</div>';
