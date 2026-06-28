@@ -59,14 +59,17 @@
   };
 
   // One collection-group listener feeds every session's count on this page.
+  // Filter by category SERVER-SIDE so a recreation page never downloads social
+  // or disco rsvps (collection-group index on rsvps.category). Status is checked
+  // client-side — the narrowed set is tiny, so it's not worth a composite index.
   BHA._subscribe = function () {
     if (!BHA._db) return;
     var mySid = (remembered() || {}).studentId || null;
-    BHA._db.collectionGroup('rsvps').onSnapshot(function (snap) {
+    BHA._db.collectionGroup('rsvps').where('category', '==', BHA.category).onSnapshot(function (snap) {
       var counts = {}, mine = {};
       snap.forEach(function (doc) {
         var d = doc.data() || {};
-        if (d.category !== BHA.category || !d.sessionId) return; // ignore disco rsvps
+        if (!d.sessionId) return;
         if (d.status === 'going') {
           counts[d.sessionId] = (counts[d.sessionId] || 0) + 1;
           if (mySid && doc.id === mySid) mine[d.sessionId] = true;

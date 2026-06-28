@@ -115,11 +115,13 @@
       var stu = BHAReserve.current();
       if (!stu || !stu.studentId) { showCheckIn(); return; }
       list.innerHTML = '<div class="empty">Loading your reservations… ⏳</div>';
-      BHAReserve._db.collectionGroup('rsvps').onSnapshot(function (snap) {
+      // Filter to THIS student server-side (collection-group index on
+      // rsvps.studentId) — no longer downloads every other student's docs.
+      BHAReserve._db.collectionGroup('rsvps').where('studentId', '==', stu.studentId).onSnapshot(function (snap) {
         var rows = [];
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          if (d.studentId === stu.studentId && d.status === 'going' && d.sessionId) rows.push(d);
+          if (d.status === 'going' && d.sessionId) rows.push(d);
         });
         render(rows);
       }, function (err) {

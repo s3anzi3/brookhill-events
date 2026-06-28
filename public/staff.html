@@ -156,11 +156,13 @@
         return;
       }
       render({}); // initial schedule with zero counts
-      BHAReserve._db.collectionGroup('rsvps').onSnapshot(function (snap) {
+      // Only the "going" rsvps, filtered server-side (collection-group index on
+      // rsvps.status) instead of pulling the whole collection and dropping most.
+      BHAReserve._db.collectionGroup('rsvps').where('status', '==', 'going').onSnapshot(function (snap) {
         var by = {}; // sessionId -> [ {name, group} ]
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          if (!d.sessionId || d.status !== 'going') return;
+          if (!d.sessionId) return;
           (by[d.sessionId] = by[d.sessionId] || []).push({ name: d.name || '?', group: d.group || '' });
         });
         render(by);
