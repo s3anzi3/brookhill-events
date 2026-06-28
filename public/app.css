@@ -1,6 +1,6 @@
 /* Shared styles for Brook Hill Events sub-pages (recreation, social rooms). */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-html,body{background:#060611;color:#f8fafc;font-family:'Space Grotesk',sans-serif;overflow-x:hidden;}
+html,body{background:#060611;color:#f8fafc;font-family:'Space Grotesk',sans-serif;overflow-x:hidden;color-scheme:dark;}
 a{text-decoration:none;color:inherit;}
 
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
