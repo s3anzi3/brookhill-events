@@ -8,9 +8,15 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|html|png)",
+        "source": "**/*.@(js|html)",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "**/*.@(png|jpg|jpeg|webp|gif|svg|ico)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
         ]
       }
     ]
